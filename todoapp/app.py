@@ -5,6 +5,7 @@ from flask_migrate import Migrate
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://postgres:203264@localhost:5432/todoapp'
 db = SQLAlchemy(app)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 migrate = Migrate(app, db)
 
@@ -40,15 +41,22 @@ def create_todo():
 def set_completed_todo(todo_id):
     try:
         completed = request.get_json()['completed']
-        todo = Todo.query.all(todo_id)
+        todo = Todo.query.get(todo_id)
         todo.completed = completed
         db.session.commit()
     except:
         db.session.rollback()
     finally:
         db.session.close()
-    return redirect(url_for('index'))
+
+if error:
+    abort(500)
+else:
+    return jsonify({'success': True})
 
 @app.route('/')
 def index():
-    return render_template('index.html', data=Todo.query.all())
+    return render_template('index.html', data=Todo.query.order_by('id').all())
+
+if __name__ == '__main__':
+    app.run(debug=True)
